@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+	<context:annotation-config />
+	<context:component-scan base-package="com.gits.invoice.dao" />
+
+	<!-- Add this tag to enable annotations transactions -->
+	<tx:annotation-driven transaction-manager="txManager"
+		proxy-target-class="true" />
+
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:/test-database.properties" />
+	</bean>
+
+	<import resource="classpath:test-hibernate-config.xml" />
+
+	<!-- Declare a datasource that has pooling capabilities -->
+
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+
+	<!-- <bean id="hibernateTemplate" class="org.springframework.orm.hibernate4.HibernateTemplate"> 
+		<property name="sessionFactory" ref="sessionFactory" /> </bean> -->
+
+	<!-- An AnnotationSessionFactoryBean for loading Hibernate mappings from 
+		annotated domain classes. -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="packagesToScan" value="com.gits.invoice.core.entity" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show.sql}</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<!-- <prop key="hibernate.query.factory_class">org.hibernate.hql.internal.classic.ClassicQueryTranslatorFactory</prop> -->
+			</props>
+		</property>
+	</bean>
+
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="*" />
+		</tx:attributes>
+	</tx:advice>
+	<aop:config>
+		<aop:pointcut id="allOperation"
+			expression="execution(* com.gits.invoice.dao.*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="allOperation" />
+	</aop:config>
+
+</beans>
